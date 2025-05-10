@@ -1,14 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Juego Multijugador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
   <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      background-color: #000;
+    }
+
     canvas {
       background: #111;
       display: block;
       margin: 0 auto;
     }
+
     .touch-controls {
       position: fixed;
       bottom: 20px;
@@ -40,12 +54,33 @@
     .empty {
       background: transparent;
     }
+
+    #power-btn {
+      position: fixed;
+      right: 20px;
+      bottom: 100px;
+      width: 80px;
+      height: 80px;
+      background-color: gold;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 80px;
+      box-shadow: 0 0 10px yellow;
+      z-index: 100;
+    }
   </style>
 </head>
+
 <body>
+  <!-- Canvas del juego -->
   <canvas id="game" width="800" height="600"></canvas>
 
-  <!-- Controles táctiles -->
+  <!-- Botón táctil de poder -->
+  <div id="power-btn">⚡</div>
+
+  <!-- Controles táctiles de movimiento -->
   <div class="touch-controls">
     <div class="empty"></div>
     <div class="btn" id="up">↑</div>
@@ -55,6 +90,7 @@
     <div class="btn" id="right">→</div>
   </div>
 
+  <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
