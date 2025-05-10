@@ -2,20 +2,24 @@ const socket = io();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+const MAP_WIDTH = 1000;
+const MAP_HEIGHT = 1000;
+const VIEW_WIDTH = canvas.width = 800;
+const VIEW_HEIGHT = canvas.height = 600;
+
 let players = {};
 let myId = null;
 
-// Recibir datos iniciales de jugadores
+// Inicialización
 socket.on('init', data => {
   players = data;
+  myId = socket.id;
 });
 
-// Nuevo jugador se une
 socket.on('new-player', data => {
   players[data.id] = data;
 });
 
-// Jugador se mueve
 socket.on('player-moved', data => {
   if (players[data.id]) {
     players[data.id].x = data.x;
@@ -23,38 +27,32 @@ socket.on('player-moved', data => {
   }
 });
 
-// Jugador recibe daño
 socket.on('player-hit', ({ id, life }) => {
   if (players[id]) players[id].life = life;
 });
 
-// Jugador eliminado
 socket.on('player-eliminated', id => {
   delete players[id];
 });
 
-// Poder activado
 socket.on('power-activated', id => {
   if (players[id]) players[id].usingPower = true;
 });
 
-// Poder finaliza
 socket.on('power-ended', id => {
   if (players[id]) players[id].usingPower = false;
 });
 
-// Jugador desconectado
 socket.on('player-disconnected', id => {
   delete players[id];
 });
 
-// Detectar teclas
+// Movimiento con teclado
 document.addEventListener('keydown', e => {
   sendMovementFromKey(e.key);
-  if (e.key === 'e') activatePower(); // tecla para poder
+  if (e.key === 'e') activatePower();
 });
 
-// Enviar movimiento al servidor
 function sendMovementFromKey(key) {
   let dx = 0, dy = 0;
   if (key === 'w' || key === 'ArrowUp') dy = -5;
@@ -70,39 +68,48 @@ function activatePower() {
   socket.emit('check-collisions');
 }
 
-// Botón táctil de poder
-document.getElementById('power-btn')?.addEventListener('touchstart', () => {
-  activatePower();
-});
-
-// Botones de movimiento táctil
+// Botones móviles
+document.getElementById('power-btn')?.addEventListener('touchstart', () => activatePower());
 document.getElementById('up')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowUp'));
 document.getElementById('down')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowDown'));
 document.getElementById('left')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowLeft'));
 document.getElementById('right')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowRight'));
 
-// Dibujar juego
+// Dibujo con cámara centrada
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+  const me = players[myId];
+  if (!me) return;
+
+  const cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, me.x - VIEW_WIDTH / 2));
+  const cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, me.y - VIEW_HEIGHT / 2));
+
+  // Dibujar fondo (opcional)
+  ctx.fillStyle = '#222';
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
   for (let id in players) {
     const p = players[id];
+    const drawX = p.x - cameraX;
+    const drawY = p.y - cameraY;
 
-    // Dibujar halo de poder si está activo
+    // Halo de poder
     if (p.usingPower) {
       ctx.fillStyle = 'rgba(255,255,0,0.3)';
-      ctx.fillRect(p.x - 10, p.y - 10, 40, 40);
+      ctx.fillRect(drawX - 10, drawY - 10, 40, 40);
     }
 
-    // Dibujar jugador
+    // Jugador
     ctx.fillStyle = p.color;
-    ctx.fillRect(p.x, p.y, 20, 20);
+    ctx.fillRect(drawX, drawY, 20, 20);
 
-    // Dibujar barra de vida
+    // Barra de vida
     ctx.fillStyle = 'red';
-    ctx.fillRect(p.x, p.y - 10, 20, 4);
+    ctx.fillRect(drawX, drawY - 10, 20, 4);
     ctx.fillStyle = 'green';
     const vidaWidth = Math.max(0, (p.life / 100) * 20);
-    ctx.fillRect(p.x, p.y - 10, vidaWidth, 4);
+    ctx.fillRect(drawX, drawY - 10, vidaWidth, 4);
   }
 
   requestAnimationFrame(draw);
