@@ -10,10 +10,13 @@ const VIEW_HEIGHT = canvas.height = 600;
 let players = {};
 let myId = null;
 
-// Inicialización
+// Asegurar que myId esté disponible al conectarse
+socket.on('connect', () => {
+  myId = socket.id;
+});
+
 socket.on('init', data => {
   players = data;
-  myId = socket.id;
 });
 
 socket.on('new-player', data => {
@@ -62,7 +65,6 @@ function sendMovementFromKey(key) {
   socket.emit('move', { dx, dy });
 }
 
-// Activar poder
 function activatePower() {
   socket.emit('activate-power');
   socket.emit('check-collisions');
@@ -79,16 +81,22 @@ document.getElementById('right')?.addEventListener('touchstart', () => sendMovem
 function draw() {
   ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
-  const me = players[myId];
-  if (!me) return;
+  if (!myId || !players[myId]) {
+    requestAnimationFrame(draw);
+    return;
+  }
 
+  const me = players[myId];
+
+  // Calcular la cámara para que siga al jugador
   const cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, me.x - VIEW_WIDTH / 2));
   const cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, me.y - VIEW_HEIGHT / 2));
 
-  // Dibujar fondo (opcional)
+  // Fondo opcional
   ctx.fillStyle = '#222';
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
+  // Dibujar todos los jugadores
   for (let id in players) {
     const p = players[id];
     const drawX = p.x - cameraX;
