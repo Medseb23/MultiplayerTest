@@ -1,39 +1,52 @@
-const express = require('express');
-const http = require('http');
-const socket = require('socket.io');
+// NUEVO: Cada jugador ahora tiene vida y estado de poder
+players[socket.id] = {
+  x: 100,
+  y: 100,
+  color: getRandomColor(),
+  life: 100,
+  usingPower: false
+};
 
-const app = express();
-const server = http.createServer(app);
-const io = socket(server);
+// NUEVO: Activar poder (desde el cliente)
+socket.on('activate-power', () => {
+  if (players[socket.id]) {
+    players[socket.id].usingPower = true;
+    io.emit('power-activated', socket.id);
 
-app.use(express.static('public'));
-
-const players = {};
-
-io.on('connection', socket => {
-  console.log('Nuevo jugador:', socket.id);
-  players[socket.id] = { x: 100, y: 100, color: getRandomColor() };
-
-  socket.emit('init', players);
-  socket.broadcast.emit('new-player', { id: socket.id, ...players[socket.id] });
-
-  socket.on('move', data => {
-    if (players[socket.id]) {
-      players[socket.id].x += data.dx;
-      players[socket.id].y += data.dy;
-      io.emit('player-moved', { id: socket.id, x: players[socket.id].x, y: players[socket.id].y });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    delete players[socket.id];
-    io.emit('player-disconnected', socket.id);
-  });
+    // Después de 1 segundo, se apaga
+    setTimeout(() => {
+      if (players[socket.id]) {
+        players[socket.id].usingPower = false;
+        io.emit('power-ended', socket.id);
+      }
+    }, 1000);
+  }
 });
 
-function getRandomColor() {
-  const letters = '0123456789ABCDEF';
-  return '#' + Array.from({length: 6}, () => letters[Math.floor(Math.random() * 16)]).join('');
-}
+// NUEVO: Colisión y daño
+socket.on('check-collisions', () => {
+  const attacker = players[socket.id];
+  if (!attacker || !attacker.usingPower) return;
 
-server.listen(process.env.PORT || 3000, () => console.log('Servidor corriendo...'));
+  const halo = { x: attacker.x - 10, y: attacker.y - 10, size: 40 };
+
+  for (let id in players) {
+    if (id !== socket.id) {
+      const target = players[id];
+      if (
+        target.x < halo.x + halo.size &&
+        target.x + 20 > halo.x &&
+        target.y < halo.y + halo.size &&
+        target.y + 20 > halo.y
+      ) {
+        target.life -= 10;
+        if (target.life <= 0) {
+          io.emit('player-eliminated', id);
+          delete players[id];
+        } else {
+          io.emit('player-hit', { id, life: target.life });
+        }
+      }
+    }
+  }
+});
