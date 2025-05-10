@@ -24,13 +24,24 @@ socket.on('player-disconnected', id => {
 });
 
 document.addEventListener('keydown', e => {
-  let dx = 0, dy = 0;
-  if (e.key === 'w') dy = -5;
-  if (e.key === 's') dy = 5;
-  if (e.key === 'a') dx = -5;
-  if (e.key === 'd') dx = 5;
-  socket.emit('move', { dx, dy });
+  sendMovementFromKey(e.key);
 });
+
+// ✅ funciones para movimiento con teclas o botones
+function sendMovementFromKey(key) {
+  let dx = 0, dy = 0;
+  if (key === 'w' || key === 'ArrowUp') dy = -5;
+  if (key === 's' || key === 'ArrowDown') dy = 5;
+  if (key === 'a' || key === 'ArrowLeft') dx = -5;
+  if (key === 'd' || key === 'ArrowRight') dx = 5;
+  socket.emit('move', { dx, dy });
+}
+
+// ✅ controles táctiles
+document.getElementById('up').addEventListener('touchstart', () => sendMovementFromKey('ArrowUp'));
+document.getElementById('down').addEventListener('touchstart', () => sendMovementFromKey('ArrowDown'));
+document.getElementById('left').addEventListener('touchstart', () => sendMovementFromKey('ArrowLeft'));
+document.getElementById('right').addEventListener('touchstart', () => sendMovementFromKey('ArrowRight'));
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
