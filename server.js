@@ -47,6 +47,7 @@ io.on('connection', socket => {
     if (players[socket.id]) {
       players[socket.id].x += data.dx;
       players[socket.id].y += data.dy;
+
       players[socket.id].x = Math.max(0, Math.min(980, players[socket.id].x));
       players[socket.id].y = Math.max(0, Math.min(980, players[socket.id].y));
 
@@ -83,8 +84,9 @@ io.on('connection', socket => {
     };
 
     for (let id in players) {
-      if (id !== socket.id) {
+      if (id !== socket.id && players[id]) {
         const target = players[id];
+
         if (
           target.x < halo.x + halo.size &&
           target.x + 20 > halo.x &&
@@ -92,18 +94,28 @@ io.on('connection', socket => {
           target.y + 20 > halo.y
         ) {
           target.life -= 10;
-          if (target.life <= 0) {
-            attacker.score += 1;
 
-            // Guardar en leaderboard
-            if (target.name) {
-              leaderboard.push({ name: target.name, score: players[target.id].score || 0 });
+          if (target.life <= 0) {
+            if (attacker !== target && attacker) {
+              attacker.score += 1;
+            }
+
+            // Guardar en leaderboard solo si el jugador aún existe y tiene nombre
+            if (players[id] && players[id].name) {
+              leaderboard.push({
+                name: players[id].name,
+                score: players[id].score || 0
+              });
               leaderboard.sort((a, b) => b.score - a.score);
               fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
             }
 
             io.emit('player-eliminated', id);
-            delete players[id];
+
+            // Esperar un poco antes de eliminarlo para evitar errores por eventos pendientes
+            setTimeout(() => {
+              delete players[id];
+            }, 100);
           } else {
             io.emit('player-hit', { id, life: target.life });
           }
@@ -120,21 +132,23 @@ io.on('connection', socket => {
   });
 
   socket.on('get-leaderboard', () => {
-    socket.emit('leaderboard-data', leaderboard.slice(0, 5)); // solo top 5
+    socket.emit('leaderboard-data', leaderboard.slice(0, 5));
   });
 
   socket.on('disconnect', () => {
     console.log(`Jugador desconectado: ${socket.id}`);
 
-    const player = players[socket.id];
-    if (player && player.name && player.score > 0) {
-      leaderboard.push({ name: player.name, score: player.score });
-      leaderboard.sort((a, b) => b.score - a.score);
-      fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
-    }
+    if (players[socket.id]) {
+      const player = players[socket.id];
+      if (player.name && player.score > 0) {
+        leaderboard.push({ name: player.name, score: player.score });
+        leaderboard.sort((a, b) => b.score - a.score);
+        fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+      }
 
-    delete players[socket.id];
-    io.emit('player-disconnected', socket.id);
+      delete players[socket.id];
+      io.emit('player-disconnected', socket.id);
+    }
   });
 });
 
