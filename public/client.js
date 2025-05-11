@@ -213,6 +213,13 @@ function draw() {
     ctx.fillText('⬅ ' + indicators.left.join(', '), 30, VIEW_HEIGHT / 2);
   if (indicators.right.length)
     ctx.fillText('➡ ' + indicators.right.join(', '), VIEW_WIDTH - 30, VIEW_HEIGHT / 2);
+const scoreboard = document.getElementById('scoreboard');
+const sortedPlayers = Object.values(players)
+  .filter(p => p.life > 0)
+  .sort((a, b) => b.score - a.score);
+
+scoreboard.innerHTML = `<strong>Jugadores conectados: ${sortedPlayers.length}</strong><br>` +
+  sortedPlayers.map(p => `${p.name || 'Sin nombre'}: ${p.score || 0} 🗡️`).join('<br>');
 
   requestAnimationFrame(draw);
 }
