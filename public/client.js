@@ -1,4 +1,4 @@
-// client.js completo con camara de 300x300 centrada en el jugador y fondo 1000x1000
+// client.js actualizado con visibilidad 500x500, escala automática y orientación hacia otros jugadores
 const socket = io();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -107,6 +107,8 @@ function draw() {
     ctx.drawImage(fondo, -cameraX, -cameraY, MAP_WIDTH, MAP_HEIGHT);
   }
 
+  const hints = [];
+
   for (let id in players) {
     const p = players[id];
     const drawX = p.x - cameraX;
@@ -138,7 +140,21 @@ function draw() {
       ctx.textAlign = 'center';
       ctx.fillText(id === myId ? `${p.name} (TÚ)` : p.name, drawX + 10, drawY - 15);
     }
+
+    // Agrega indicador de jugadores fuera de vista vertical
+    if (id !== myId) {
+      if (p.y < cameraY) hints.push(`⬆ ${p.name}`);
+      else if (p.y > cameraY + VIEW_HEIGHT) hints.push(`⬇ ${p.name}`);
+    }
   }
+
+  // Dibujar pistas de jugadores fuera de vista
+  ctx.fillStyle = 'white';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'left';
+  hints.forEach((text, i) => {
+    ctx.fillText(text, 10, VIEW_HEIGHT - 10 - (14 * i));
+  });
 
   requestAnimationFrame(draw);
 }
