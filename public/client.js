@@ -15,7 +15,9 @@ fondo.src = 'fondo.jpg';
 
 let players = {};
 let myId = null;
-let playerName = prompt("Ingresa tu nombre:");
+let playerName = localStorage.getItem('playerName') || prompt("Ingresa tu nombre:");
+localStorage.setItem('playerName', playerName);
+
 
 socket.on('connect', () => {
   myId = socket.id;
@@ -209,3 +211,7 @@ function draw() {
 }
 
 draw();
+document.getElementById('restart-btn')?.addEventListener('click', () => {
+  location.reload();
+});
+
