@@ -61,6 +61,12 @@ socket.on('power-ended', id => {
 socket.on('player-disconnected', id => {
   delete players[id];
 });
+socket.on('score-updated', ({ id, score }) => {
+  if (players[id]) {
+    players[id].score = score;
+  }
+});
+
 
 socket.on('name-updated', ({ id, name }) => {
   if (players[id]) players[id].name = name;
