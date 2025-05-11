@@ -4,13 +4,21 @@ const ctx = canvas.getContext('2d');
 
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 1000;
-const VIEW_WIDTH = canvas.width = 800;
-const VIEW_HEIGHT = canvas.height = 600;
+const LOGIC_WIDTH = 800;
+const LOGIC_HEIGHT = 600;
+
+// Ajustar tamaño lógico
+canvas.width = LOGIC_WIDTH;
+canvas.height = LOGIC_HEIGHT;
+
+// Ajustar visualmente en móviles
+canvas.style.width = "100vw";
+canvas.style.height = "100vh";
 
 let players = {};
 let myId = null;
 
-// Asegurar que myId esté disponible al conectarse
+// Capturar mi ID al conectarse
 socket.on('connect', () => {
   myId = socket.id;
 });
@@ -79,7 +87,7 @@ document.getElementById('right')?.addEventListener('touchstart', () => sendMovem
 
 // Dibujo con cámara centrada
 function draw() {
-  ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  ctx.clearRect(0, 0, LOGIC_WIDTH, LOGIC_HEIGHT);
 
   if (!myId || !players[myId]) {
     requestAnimationFrame(draw);
@@ -88,15 +96,15 @@ function draw() {
 
   const me = players[myId];
 
-  // Calcular la cámara para que siga al jugador
-  const cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, me.x - VIEW_WIDTH / 2));
-  const cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, me.y - VIEW_HEIGHT / 2));
+  // Cámara que sigue al jugador
+  const cameraX = Math.max(0, Math.min(MAP_WIDTH - LOGIC_WIDTH, me.x - LOGIC_WIDTH / 2));
+  const cameraY = Math.max(0, Math.min(MAP_HEIGHT - LOGIC_HEIGHT, me.y - LOGIC_HEIGHT / 2));
 
-  // Fondo opcional
+  // Fondo (opcional)
   ctx.fillStyle = '#222';
-  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  ctx.fillRect(0, 0, LOGIC_WIDTH, LOGIC_HEIGHT);
 
-  // Dibujar todos los jugadores
+  // Dibujar todos los jugadores en coordenadas relativas
   for (let id in players) {
     const p = players[id];
     const drawX = p.x - cameraX;
