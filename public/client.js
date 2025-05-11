@@ -1,4 +1,3 @@
-// client.js actualizado con visibilidad 500x500, escala automática y orientación hacia otros jugadores (arriba, abajo, izquierda, derecha)
 const socket = io();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -68,10 +67,37 @@ document.addEventListener('keydown', e => {
 });
 
 document.getElementById('power-btn')?.addEventListener('touchstart', () => activatePower());
-document.getElementById('up')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowUp'));
-document.getElementById('down')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowDown'));
-document.getElementById('left')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowLeft'));
-document.getElementById('right')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowRight'));
+
+// Movimiento continuo táctil
+let movementInterval = null;
+
+function startMoving(key) {
+  sendMovementFromKey(key);
+  movementInterval = setInterval(() => sendMovementFromKey(key), 100);
+}
+
+function stopMoving() {
+  clearInterval(movementInterval);
+}
+
+['up', 'down', 'left', 'right'].forEach(dir => {
+  const keyMap = {
+    up: 'ArrowUp',
+    down: 'ArrowDown',
+    left: 'ArrowLeft',
+    right: 'ArrowRight'
+  };
+
+  const btn = document.getElementById(dir);
+  if (btn) {
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startMoving(keyMap[dir]);
+    });
+    btn.addEventListener('touchend', stopMoving);
+    btn.addEventListener('touchcancel', stopMoving);
+  }
+});
 
 function sendMovementFromKey(key) {
   let dx = 0, dy = 0;
@@ -106,7 +132,7 @@ function draw() {
     ctx.drawImage(fondo, -cameraX, -cameraY, MAP_WIDTH, MAP_HEIGHT);
   }
 
-  const hints = [];
+  const indicators = { up: [], down: [], left: [], right: [] };
 
   for (let id in players) {
     const p = players[id];
@@ -140,22 +166,26 @@ function draw() {
       ctx.fillText(id === myId ? `${p.name} (TÚ)` : p.name, drawX + 10, drawY - 15);
     }
 
-    // Indicadores para otros jugadores fuera de la vista
     if (id !== myId) {
-      if (p.y < cameraY) hints.push(`⬆ ${p.name}`);
-      else if (p.y > cameraY + VIEW_HEIGHT) hints.push(`⬇ ${p.name}`);
-      else if (p.x < cameraX) hints.push(`⬅ ${p.name}`);
-      else if (p.x > cameraX + VIEW_WIDTH) hints.push(`➡ ${p.name}`);
+      if (p.y < cameraY) indicators.up.push(p.name);
+      else if (p.y > cameraY + VIEW_HEIGHT) indicators.down.push(p.name);
+      else if (p.x < cameraX) indicators.left.push(p.name);
+      else if (p.x > cameraX + VIEW_WIDTH) indicators.right.push(p.name);
     }
   }
 
-  // Dibujar pistas de orientación
   ctx.fillStyle = 'white';
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'left';
-  hints.forEach((text, i) => {
-    ctx.fillText(text, 10, VIEW_HEIGHT - 10 - (14 * i));
-  });
+  ctx.font = '16px sans-serif';
+  ctx.textAlign = 'center';
+
+  if (indicators.up.length)
+    ctx.fillText('⬆ ' + indicators.up.join(', '), VIEW_WIDTH / 2, 20);
+  if (indicators.down.length)
+    ctx.fillText('⬇ ' + indicators.down.join(', '), VIEW_WIDTH / 2, VIEW_HEIGHT - 10);
+  if (indicators.left.length)
+    ctx.fillText('⬅ ' + indicators.left.join(', '), 30, VIEW_HEIGHT / 2);
+  if (indicators.right.length)
+    ctx.fillText('➡ ' + indicators.right.join(', '), VIEW_WIDTH - 30, VIEW_HEIGHT / 2);
 
   requestAnimationFrame(draw);
 }
