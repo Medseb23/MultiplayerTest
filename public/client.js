@@ -5,17 +5,19 @@ const ctx = canvas.getContext('2d');
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 1000;
 
-let VIEW_WIDTH = window.innerWidth;
-let VIEW_HEIGHT = window.innerHeight;
+canvas.width = MAP_WIDTH;
+canvas.height = MAP_HEIGHT;
 
-canvas.width = VIEW_WIDTH;
-canvas.height = VIEW_HEIGHT;
+let fondo = new Image();
+fondo.src = 'fondo.jpg';
 
 let players = {};
 let myId = null;
+let playerName = prompt("Ingresa tu nombre:");
 
 socket.on('connect', () => {
   myId = socket.id;
+  socket.emit('set-name', playerName);
 });
 
 socket.on('init', data => {
@@ -53,6 +55,10 @@ socket.on('player-disconnected', id => {
   delete players[id];
 });
 
+socket.on('name-updated', ({ id, name }) => {
+  if (players[id]) players[id].name = name;
+});
+
 document.addEventListener('keydown', e => {
   sendMovementFromKey(e.key);
   if (e.key === 'e') activatePower();
@@ -79,38 +85,50 @@ function activatePower() {
 }
 
 function draw() {
-  ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
-  if (!myId || !players[myId]) {
-    requestAnimationFrame(draw);
-    return;
+  if (fondo.complete) {
+    ctx.drawImage(fondo, 0, 0, MAP_WIDTH, MAP_HEIGHT);
   }
-
-  const me = players[myId];
-  const cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, me.x - VIEW_WIDTH / 2));
-  const cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, me.y - VIEW_HEIGHT / 2));
-
-  ctx.fillStyle = '#222';
-  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
   for (let id in players) {
     const p = players[id];
-    const drawX = p.x - cameraX;
-    const drawY = p.y - cameraY;
 
+    // Halo
     if (p.usingPower) {
       ctx.fillStyle = 'rgba(255,255,0,0.3)';
-      ctx.fillRect(drawX - 10, drawY - 10, 40, 40);
+      ctx.fillRect(p.x - 10, p.y - 10, 40, 40);
     }
 
+    // Jugador
     ctx.fillStyle = p.color;
-    ctx.fillRect(drawX, drawY, 20, 20);
+    ctx.fillRect(p.x, p.y, 20, 20);
 
+    // Borde si es uno mismo
+    if (id === myId) {
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(p.x - 1, p.y - 1, 22, 22);
+    }
+
+    // Vida
     ctx.fillStyle = 'red';
-    ctx.fillRect(drawX, drawY - 10, 20, 4);
+    ctx.fillRect(p.x, p.y - 10, 20, 4);
     ctx.fillStyle = 'green';
     const vidaWidth = Math.max(0, (p.life / 100) * 20);
-    ctx.fillRect(drawX, drawY - 10, vidaWidth, 4);
+    ctx.fillRect(p.x, p.y - 10, vidaWidth, 4);
+
+    // Nombre
+    if (p.name) {
+      ctx.fillStyle = 'white';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        id === myId ? `${p.name} (TÚ)` : p.name,
+        p.x + 10,
+        p.y - 15
+      );
+    }
   }
 
   requestAnimationFrame(draw);
