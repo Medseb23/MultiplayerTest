@@ -97,8 +97,10 @@ io.on('connection', socket => {
 
           if (target.life <= 0) {
             if (attacker !== target && attacker) {
-              attacker.score += 1;
-            }
+  attacker.score += 1;
+  io.emit('score-updated', { id: socket.id, score: attacker.score });
+}
+
 
             if (players[id] && players[id].name) {
               const name = players[id].name;
