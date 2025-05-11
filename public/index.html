@@ -26,7 +26,7 @@
 
     #canvas-container {
       width: 100%;
-      max-width: 1000px;
+      max-width: 300px;
       aspect-ratio: 1 / 1;
       background: #111;
     }
@@ -39,28 +39,20 @@
       image-rendering: pixelated;
     }
 
-    #power-btn {
-      margin: 12px auto;
-      width: 80px;
-      height: 80px;
-      background-color: gold;
-      border-radius: 50%;
-      font-size: 18px;
-      font-weight: bold;
-      text-align: center;
-      line-height: 80px;
-      box-shadow: 0 0 10px yellow;
-      z-index: 2;
+    #controls-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
     }
 
     .touch-controls {
       display: grid;
-      grid-template-columns: 60px 60px 60px;
+      grid-template-columns: 60px 60px 60px 80px;
       grid-template-rows: 60px 60px;
       gap: 10px;
       justify-content: center;
       align-items: center;
-      margin-bottom: 12px;
     }
 
     .btn {
@@ -79,36 +71,51 @@
       background: rgba(255, 255, 255, 0.5);
     }
 
-    .empty {
-      background: transparent;
+    #power-btn {
+      width: 80px;
+      height: 60px;
+      background-color: gold;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 60px;
+      box-shadow: 0 0 10px yellow;
     }
   </style>
 </head>
 
 <body>
-  <!-- Contenedor cuadrado para el canvas -->
+  <!-- Canvas centrado arriba -->
   <div id="canvas-container">
-    <canvas id="game" width="1000" height="1000"></canvas>
+    <canvas id="game" width="300" height="300"></canvas>
   </div>
 
-  <!-- Botón de poder -->
-  <div id="power-btn">⚡</div>
-
-  <!-- Controles táctiles -->
-  <div class="touch-controls">
-    <div class="empty"></div>
-    <div class="btn" id="up">↑</div>
-    <div class="empty"></div>
-    <div class="btn" id="left">←</div>
-    <div class="btn" id="down">↓</div>
-    <div class="btn" id="right">→</div>
+  <!-- Controles solo visibles en móvil -->
+  <div id="controls-container">
+    <div class="touch-controls">
+      <div></div>
+      <div class="btn" id="up">↑</div>
+      <div></div>
+      <div></div>
+      <div class="btn" id="left">←</div>
+      <div class="btn" id="down">↓</div>
+      <div class="btn" id="right">→</div>
+      <div id="power-btn">⚡</div>
+    </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Socket + JS -->
   <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Mostrar controles táctiles solo en móvil
+    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+      document.getElementById('controls-container').style.display = 'flex';
+    }
+  </script>
   <script src="client.js"></script>
 
-  <!-- Evitar doble tap zoom y gestos -->
+  <!-- Evitar zoom accidental -->
   <script>
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
