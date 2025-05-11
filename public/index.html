@@ -92,6 +92,19 @@
       line-height: 60px;
       box-shadow: 0 0 10px yellow;
     }
+
+    #leaderboard {
+      display: none;
+      color: white;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    #leaderboard ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -114,7 +127,13 @@
     </div>
   </div>
 
+  <div id="leaderboard">
+    <h2>🏆 Leaderboard</h2>
+    <ol id="leaderboard-list"></ol>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
   <script>
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
       document.getElementById('controls-container').style.display = 'flex';
@@ -122,17 +141,11 @@
 
     document.getElementById('fullscreen-btn').addEventListener('click', () => {
       const container = document.documentElement;
-      if (container.requestFullscreen) {
-        container.requestFullscreen();
-      } else if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-      } else if (container.msRequestFullscreen) {
-        container.msRequestFullscreen();
-      }
+      if (container.requestFullscreen) container.requestFullscreen();
+      else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+      else if (container.msRequestFullscreen) container.msRequestFullscreen();
     });
-  </script>
-  <script src="client.js"></script>
-  <script>
+
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
       const now = new Date().getTime();
