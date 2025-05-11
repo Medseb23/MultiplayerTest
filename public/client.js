@@ -14,7 +14,6 @@ canvas.height = VIEW_HEIGHT;
 let players = {};
 let myId = null;
 
-// Capturar el ID del jugador al conectarse
 socket.on('connect', () => {
   myId = socket.id;
 });
@@ -54,13 +53,11 @@ socket.on('player-disconnected', id => {
   delete players[id];
 });
 
-// Controles por teclado
 document.addEventListener('keydown', e => {
   sendMovementFromKey(e.key);
   if (e.key === 'e') activatePower();
 });
 
-// Movimiento táctil
 document.getElementById('power-btn')?.addEventListener('touchstart', () => activatePower());
 document.getElementById('up')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowUp'));
 document.getElementById('down')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowDown'));
@@ -81,7 +78,6 @@ function activatePower() {
   socket.emit('check-collisions');
 }
 
-// Dibujo del juego
 function draw() {
   ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
@@ -91,11 +87,9 @@ function draw() {
   }
 
   const me = players[myId];
-
   const cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, me.x - VIEW_WIDTH / 2));
   const cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, me.y - VIEW_HEIGHT / 2));
 
-  // Fondo del canvas
   ctx.fillStyle = '#222';
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
@@ -104,4 +98,22 @@ function draw() {
     const drawX = p.x - cameraX;
     const drawY = p.y - cameraY;
 
-    // Halo
+    if (p.usingPower) {
+      ctx.fillStyle = 'rgba(255,255,0,0.3)';
+      ctx.fillRect(drawX - 10, drawY - 10, 40, 40);
+    }
+
+    ctx.fillStyle = p.color;
+    ctx.fillRect(drawX, drawY, 20, 20);
+
+    ctx.fillStyle = 'red';
+    ctx.fillRect(drawX, drawY - 10, 20, 4);
+    ctx.fillStyle = 'green';
+    const vidaWidth = Math.max(0, (p.life / 100) * 20);
+    ctx.fillRect(drawX, drawY - 10, vidaWidth, 4);
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
