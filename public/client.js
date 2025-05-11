@@ -5,8 +5,8 @@ const ctx = canvas.getContext('2d');
 
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 1000;
-const VIEW_WIDTH = 300;
-const VIEW_HEIGHT = 300;
+const VIEW_WIDTH = 500;
+const VIEW_HEIGHT = 500;
 
 canvas.width = VIEW_WIDTH;
 canvas.height = VIEW_HEIGHT;
