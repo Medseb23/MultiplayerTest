@@ -24,11 +24,13 @@
     }
 
     #canvas-container {
-      width: 100%;
-      max-width: 1000px;
-      aspect-ratio: 1 / 1;
-      background: #111;
-    }
+  background: #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
 
     canvas {
       width: 100%;
@@ -109,8 +111,9 @@
 </head>
 <body>
   <div id="canvas-container">
-    <canvas id="game" width="500" height="500"></canvas>
-  </div>
+  <canvas id="game" width="500" height="500"></canvas>
+</div>
+
 <div id="scoreboard" style="
   position: absolute;
   top: 10px;
@@ -196,5 +199,29 @@
       e.preventDefault();
     });
   </script>
+  <script>
+  function resizeCanvasSquare() {
+    const container = document.getElementById('canvas-container');
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    // En móvil: usar ancho completo
+    if (windowWidth < 768) {
+      const size = windowWidth;
+      container.style.width = size + 'px';
+      container.style.height = size + 'px';
+    } else {
+      // En escritorio: usar la altura visible como referencia
+      const size = Math.min(windowHeight * 0.9, 1000); // máximo 1000
+      container.style.width = size + 'px';
+      container.style.height = size + 'px';
+    }
+  }
+
+  window.addEventListener('resize', resizeCanvasSquare);
+  window.addEventListener('orientationchange', resizeCanvasSquare);
+  window.addEventListener('load', resizeCanvasSquare);
+</script>
+
 </body>
 </html>
