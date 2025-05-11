@@ -1,12 +1,15 @@
+// client.js completo con camara de 300x300 centrada en el jugador y fondo 1000x1000
 const socket = io();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 1000;
+const VIEW_WIDTH = 300;
+const VIEW_HEIGHT = 300;
 
-canvas.width = MAP_WIDTH;
-canvas.height = MAP_HEIGHT;
+canvas.width = VIEW_WIDTH;
+canvas.height = VIEW_HEIGHT;
 
 let fondo = new Image();
 fondo.src = 'fondo.jpg';
@@ -85,49 +88,55 @@ function activatePower() {
 }
 
 function draw() {
-  ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+  ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  if (!myId || !players[myId]) {
+    requestAnimationFrame(draw);
+    return;
+  }
+
+  const me = players[myId];
+
+  // Calcula la camara centrada en el jugador con limites
+  let cameraX = me.x + 10 - VIEW_WIDTH / 2;
+  let cameraY = me.y + 10 - VIEW_HEIGHT / 2;
+
+  cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, cameraX));
+  cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, cameraY));
 
   if (fondo.complete) {
-    ctx.drawImage(fondo, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+    ctx.drawImage(fondo, -cameraX, -cameraY, MAP_WIDTH, MAP_HEIGHT);
   }
 
   for (let id in players) {
     const p = players[id];
+    const drawX = p.x - cameraX;
+    const drawY = p.y - cameraY;
 
-    // Halo
     if (p.usingPower) {
       ctx.fillStyle = 'rgba(255,255,0,0.3)';
-      ctx.fillRect(p.x - 10, p.y - 10, 40, 40);
+      ctx.fillRect(drawX - 10, drawY - 10, 40, 40);
     }
 
-    // Jugador
     ctx.fillStyle = p.color;
-    ctx.fillRect(p.x, p.y, 20, 20);
+    ctx.fillRect(drawX, drawY, 20, 20);
 
-    // Borde si es uno mismo
     if (id === myId) {
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 2;
-      ctx.strokeRect(p.x - 1, p.y - 1, 22, 22);
+      ctx.strokeRect(drawX - 1, drawY - 1, 22, 22);
     }
 
-    // Vida
     ctx.fillStyle = 'red';
-    ctx.fillRect(p.x, p.y - 10, 20, 4);
+    ctx.fillRect(drawX, drawY - 10, 20, 4);
     ctx.fillStyle = 'green';
     const vidaWidth = Math.max(0, (p.life / 100) * 20);
-    ctx.fillRect(p.x, p.y - 10, vidaWidth, 4);
+    ctx.fillRect(drawX, drawY - 10, vidaWidth, 4);
 
-    // Nombre
     if (p.name) {
       ctx.fillStyle = 'white';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(
-        id === myId ? `${p.name} (TÚ)` : p.name,
-        p.x + 10,
-        p.y - 15
-      );
+      ctx.fillText(id === myId ? `${p.name} (TÚ)` : p.name, drawX + 10, drawY - 15);
     }
   }
 
