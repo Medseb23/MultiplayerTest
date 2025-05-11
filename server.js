@@ -100,19 +100,24 @@ io.on('connection', socket => {
               attacker.score += 1;
             }
 
-            // Guardar en leaderboard solo si el jugador aún existe y tiene nombre
             if (players[id] && players[id].name) {
-              leaderboard.push({
-                name: players[id].name,
-                score: players[id].score || 0
-              });
-              leaderboard.sort((a, b) => b.score - a.score);
-              fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+              const name = players[id].name;
+              const newScore = players[id].score || 0;
+              const existing = leaderboard.find(e => e.name === name);
+
+              if (!existing || newScore > existing.score) {
+                if (existing) {
+                  existing.score = newScore;
+                } else {
+                  leaderboard.push({ name, score: newScore });
+                }
+                leaderboard.sort((a, b) => b.score - a.score);
+                fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+              }
             }
 
             io.emit('player-eliminated', id);
 
-            // Esperar un poco antes de eliminarlo para evitar errores por eventos pendientes
             setTimeout(() => {
               delete players[id];
             }, 100);
@@ -140,10 +145,20 @@ io.on('connection', socket => {
 
     if (players[socket.id]) {
       const player = players[socket.id];
-      if (player.name && player.score > 0) {
-        leaderboard.push({ name: player.name, score: player.score });
-        leaderboard.sort((a, b) => b.score - a.score);
-        fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+      const name = player.name;
+      const newScore = player.score || 0;
+
+      if (name) {
+        const existing = leaderboard.find(e => e.name === name);
+        if (!existing || newScore > existing.score) {
+          if (existing) {
+            existing.score = newScore;
+          } else {
+            leaderboard.push({ name, score: newScore });
+          }
+          leaderboard.sort((a, b) => b.score - a.score);
+          fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+        }
       }
 
       delete players[socket.id];
