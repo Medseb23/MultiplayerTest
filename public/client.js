@@ -42,6 +42,9 @@ socket.on('player-hit', ({ id, life }) => {
 });
 
 socket.on('player-eliminated', id => {
+  if (id === myId) {
+    socket.emit('get-leaderboard');
+  }
   delete players[id];
 });
 
@@ -61,14 +64,30 @@ socket.on('name-updated', ({ id, name }) => {
   if (players[id]) players[id].name = name;
 });
 
+socket.on('leaderboard-data', data => {
+  const list = document.getElementById('leaderboard-list');
+  const box = document.getElementById('leaderboard');
+
+  list.innerHTML = '';
+  data.forEach((entry, i) => {
+    const li = document.createElement('li');
+    li.textContent = `${i + 1}. ${entry.name} - ${entry.score} pts`;
+    list.appendChild(li);
+  });
+
+  box.style.display = 'block';
+});
+
 document.addEventListener('keydown', e => {
   sendMovementFromKey(e.key);
   if (e.key === 'e') activatePower();
+  if (e.key.toLowerCase() === 'l') {
+    socket.emit('get-leaderboard');
+  }
 });
 
 document.getElementById('power-btn')?.addEventListener('touchstart', () => activatePower());
 
-// Movimiento continuo táctil
 let movementInterval = null;
 
 function startMoving(key) {
@@ -121,7 +140,6 @@ function draw() {
   }
 
   const me = players[myId];
-
   let cameraX = me.x + 10 - VIEW_WIDTH / 2;
   let cameraY = me.y + 10 - VIEW_HEIGHT / 2;
 
