@@ -22,7 +22,11 @@
 
     canvas {
       display: block;
+      max-width: 100vw;
+      max-height: 100vh;
+      margin: auto;
       background: #111;
+      image-rendering: pixelated;
     }
 
     .touch-controls {
@@ -76,7 +80,7 @@
 </head>
 
 <body>
-  <canvas id="game"></canvas>
+  <canvas id="game" width="1000" height="1000"></canvas>
 
   <!-- Botón táctil de poder -->
   <div id="power-btn">⚡</div>
@@ -91,17 +95,16 @@
     <div class="btn" id="right">→</div>
   </div>
 
+  <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 
-  <!-- Prevenir zoom en móviles -->
+  <!-- Evitar doble tap zoom -->
   <script>
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
       const now = new Date().getTime();
-      if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-      }
+      if (now - lastTouchEnd <= 300) event.preventDefault();
       lastTouchEnd = now;
     }, false);
 
