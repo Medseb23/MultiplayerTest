@@ -1,117 +1,107 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Juego Multijugador</title>
+const socket = io();
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 
-  <!-- Viewport configurado para prevenir zoom -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+const MAP_WIDTH = 1000;
+const MAP_HEIGHT = 1000;
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      touch-action: none;
-      overscroll-behavior: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-      -ms-touch-action: none;
-    }
+let VIEW_WIDTH = window.innerWidth;
+let VIEW_HEIGHT = window.innerHeight;
 
-    canvas {
-      display: block;
-      background: #111;
-    }
+canvas.width = VIEW_WIDTH;
+canvas.height = VIEW_HEIGHT;
 
-    .touch-controls {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: grid;
-      grid-template-columns: 60px 60px 60px;
-      grid-template-rows: 60px 60px;
-      gap: 10px;
-      z-index: 10;
-    }
+let players = {};
+let myId = null;
 
-    .btn {
-      width: 60px;
-      height: 60px;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-size: 24px;
-      text-align: center;
-      line-height: 60px;
-      border-radius: 8px;
-      user-select: none;
-    }
+// Capturar el ID del jugador al conectarse
+socket.on('connect', () => {
+  myId = socket.id;
+});
 
-    .btn:active {
-      background: rgba(255, 255, 255, 0.5);
-    }
+socket.on('init', data => {
+  players = data;
+});
 
-    .empty {
-      background: transparent;
-    }
+socket.on('new-player', data => {
+  players[data.id] = data;
+});
 
-    #power-btn {
-      position: fixed;
-      right: 20px;
-      bottom: 100px;
-      width: 80px;
-      height: 80px;
-      background-color: gold;
-      border-radius: 50%;
-      font-size: 16px;
-      font-weight: bold;
-      text-align: center;
-      line-height: 80px;
-      box-shadow: 0 0 10px yellow;
-      z-index: 100;
-    }
-  </style>
-</head>
+socket.on('player-moved', data => {
+  if (players[data.id]) {
+    players[data.id].x = data.x;
+    players[data.id].y = data.y;
+  }
+});
 
-<body>
-  <!-- Canvas del juego -->
-  <canvas id="game" width="800" height="600"></canvas>
+socket.on('player-hit', ({ id, life }) => {
+  if (players[id]) players[id].life = life;
+});
 
-  <!-- Botón táctil de poder -->
-  <div id="power-btn">⚡</div>
+socket.on('player-eliminated', id => {
+  delete players[id];
+});
 
-  <!-- Controles táctiles -->
-  <div class="touch-controls">
-    <div class="empty"></div>
-    <div class="btn" id="up">↑</div>
-    <div class="empty"></div>
-    <div class="btn" id="left">←</div>
-    <div class="btn" id="down">↓</div>
-    <div class="btn" id="right">→</div>
-  </div>
+socket.on('power-activated', id => {
+  if (players[id]) players[id].usingPower = true;
+});
 
-  <!-- Scripts -->
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+socket.on('power-ended', id => {
+  if (players[id]) players[id].usingPower = false;
+});
 
-  <!-- Evitar doble tap zoom y gestos -->
-  <script>
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
-      const now = new Date().getTime();
-      if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, false);
+socket.on('player-disconnected', id => {
+  delete players[id];
+});
 
-    document.addEventListener('gesturestart', function (e) {
-      e.preventDefault();
-    });
-  </script>
-</body>
-</html>
+// Controles por teclado
+document.addEventListener('keydown', e => {
+  sendMovementFromKey(e.key);
+  if (e.key === 'e') activatePower();
+});
+
+// Movimiento táctil
+document.getElementById('power-btn')?.addEventListener('touchstart', () => activatePower());
+document.getElementById('up')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowUp'));
+document.getElementById('down')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowDown'));
+document.getElementById('left')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowLeft'));
+document.getElementById('right')?.addEventListener('touchstart', () => sendMovementFromKey('ArrowRight'));
+
+function sendMovementFromKey(key) {
+  let dx = 0, dy = 0;
+  if (key === 'w' || key === 'ArrowUp') dy = -5;
+  if (key === 's' || key === 'ArrowDown') dy = 5;
+  if (key === 'a' || key === 'ArrowLeft') dx = -5;
+  if (key === 'd' || key === 'ArrowRight') dx = 5;
+  socket.emit('move', { dx, dy });
+}
+
+function activatePower() {
+  socket.emit('activate-power');
+  socket.emit('check-collisions');
+}
+
+// Dibujo del juego
+function draw() {
+  ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+  if (!myId || !players[myId]) {
+    requestAnimationFrame(draw);
+    return;
+  }
+
+  const me = players[myId];
+
+  const cameraX = Math.max(0, Math.min(MAP_WIDTH - VIEW_WIDTH, me.x - VIEW_WIDTH / 2));
+  const cameraY = Math.max(0, Math.min(MAP_HEIGHT - VIEW_HEIGHT, me.y - VIEW_HEIGHT / 2));
+
+  // Fondo del canvas
+  ctx.fillStyle = '#222';
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+  for (let id in players) {
+    const p = players[id];
+    const drawX = p.x - cameraX;
+    const drawY = p.y - cameraY;
+
+    // Halo
