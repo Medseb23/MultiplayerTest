@@ -16,7 +16,7 @@ fondo.src = 'fondo.jpg';
 let players = {};
 let myId = null;
 let playerName = localStorage.getItem('playerName') || prompt("Ingresa tu nombre:");
-localStorage.setItem('playerName', playerName);
+sessionStorage.setItem('playerName', playerName);
 
 
 socket.on('connect', () => {
