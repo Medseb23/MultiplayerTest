@@ -69,6 +69,7 @@ socket.on('name-updated', ({ id, name }) => {
 socket.on('leaderboard-data', data => {
   const list = document.getElementById('leaderboard-list');
   const box = document.getElementById('leaderboard');
+  const scoreText = document.getElementById('your-score');
 
   list.innerHTML = '';
   data.forEach((entry, i) => {
@@ -77,8 +78,14 @@ socket.on('leaderboard-data', data => {
     list.appendChild(li);
   });
 
+  const myPlayer = players[myId];
+  if (myPlayer) {
+    scoreText.textContent = `Tu puntaje: ${myPlayer.score || 0} puntos`;
+  }
+
   box.style.display = 'block';
 });
+
 
 document.addEventListener('keydown', e => {
   sendMovementFromKey(e.key);
