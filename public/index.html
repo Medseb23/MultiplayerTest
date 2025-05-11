@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Juego Multijugador</title>
-
-  <!-- Viewport configurado para prevenir zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 
   <style>
@@ -78,8 +76,7 @@
 </head>
 
 <body>
-  <!-- Canvas del juego -->
-  <canvas id="game" width="800" height="600"></canvas>
+  <canvas id="game"></canvas>
 
   <!-- Botón táctil de poder -->
   <div id="power-btn">⚡</div>
@@ -94,11 +91,10 @@
     <div class="btn" id="right">→</div>
   </div>
 
-  <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 
-  <!-- Evitar doble tap zoom y gestos -->
+  <!-- Prevenir zoom en móviles -->
   <script>
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
